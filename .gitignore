@@ -7,3 +7,5 @@ server/data/
 .env.local
 archive/
 
+.vercel
+.env*
