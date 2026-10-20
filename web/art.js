@@ -8,10 +8,14 @@ export function toyPortrait(kind, stage = 'baby', animated = false) {
   const isAdult = stage === 'adult'
   const staticFile = isAdult ? `/beasts/${safeKind}.png` : `/beasts/${safeKind}_baby.png`
   const spriteFile = isAdult ? `/beasts/${safeKind}_walk.png` : `/beasts/${safeKind}_baby_walk.png`
+  const sleepFile = isAdult ? `/beasts/${safeKind}_sleep.png` : `/beasts/${safeKind}_baby_sleep.png`
   const uid = `${safeKind}-${stage}-${++clipCounter}`
   const stripMarkup = animated
     ? `<g class="pet-strip-wrap" clip-path="url(#clip-${uid})">
           <image class="pet-sprite-strip" href="${spriteFile}" x="3" y="3" width="912" height="114" preserveAspectRatio="none"/>
+        </g>
+        <g class="pet-sleep-wrap" clip-path="url(#clip-${uid})">
+          <image class="pet-sleep-strip" href="${sleepFile}" x="3" y="3" width="912" height="114" preserveAspectRatio="none"/>
         </g>`
     : ''
 

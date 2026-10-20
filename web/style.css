@@ -30,10 +30,12 @@
 /* Articulated 2D creature movement & 8-frame Sprite Sheet animation */
 .home-pet{cursor:pointer;translate:var(--roam-x,0px) var(--roam-y,0px);rotate:0deg;scale:1;transition:translate .08s linear}
 .home-pet .creature-svg{translate:0px 0px;rotate:0deg;scale:var(--pet-dir,1) 1;transition:scale .18s ease-out}
-.creature-svg .pet-strip-wrap{opacity:0}
+.creature-svg .pet-strip-wrap,.creature-svg .pet-sleep-wrap{opacity:0}
 .creature-svg .pet-sprite-strip{transform:translateX(0);animation:sprite-cycle 1.35s steps(8,end) infinite;will-change:transform;--animation-reduced:none}
-.home-pet.walking .pet-static-img,.home-pet.petted .pet-static-img,.home-pet.cuddle .pet-static-img,.home-pet.tickle .pet-static-img,.home-pet.feed .pet-static-img,.home-pet.play .pet-static-img{opacity:0}
+.creature-svg .pet-sleep-strip{transform:translateX(0);animation:sprite-cycle 2.1s steps(8,end) infinite;will-change:transform;--animation-reduced:none}
+.home-pet.walking .pet-static-img,.home-pet.petted .pet-static-img,.home-pet.cuddle .pet-static-img,.home-pet.tickle .pet-static-img,.home-pet.feed .pet-static-img,.home-pet.play .pet-static-img,.home-pet.sleep .pet-static-img,.home-pet.napping .pet-static-img{opacity:0}
 .home-pet.walking .pet-strip-wrap,.home-pet.petted .pet-strip-wrap,.home-pet.cuddle .pet-strip-wrap,.home-pet.tickle .pet-strip-wrap,.home-pet.feed .pet-strip-wrap,.home-pet.play .pet-strip-wrap{opacity:1}
+.home-pet.sleep .pet-sleep-wrap,.home-pet.napping .pet-sleep-wrap{opacity:1}
 .creature-svg .pet-shadow{transform-origin:60px 120px;animation:shadow-pulse 1.35s ease-in-out infinite;--animation-reduced:none}
 .creature-svg .pet-head{transform-origin:60px 64px;animation:pet-head-tilt 3.4s ease-in-out infinite;--animation-reduced:none}
 .creature-svg .pet-eyes-open{transform-origin:60px 51px;animation:pet-blink 4s ease-in-out infinite;--animation-reduced:none}
@@ -66,10 +68,13 @@
 .home-pet.play .pet-foot-r{animation:pet-step-r .3s ease-in-out infinite;--animation-reduced:none}
 .home-pet.play .pet-wing-l{animation:pet-wing-l .28s ease-in-out infinite;--animation-reduced:none}
 .home-pet.play .pet-wing-r{animation:pet-wing-r .28s ease-in-out infinite;--animation-reduced:none}
-.home-pet.sleep{translate:0px 0px}
-.home-pet.sleep .pet-sprite-strip{animation:none;transform:translateX(0);filter:brightness(.92)}
-.home-pet.sleep .pet-eyes-open{animation:none;transform:scaleY(.12)}
-.home-pet.sleep .pet-head,.home-pet.sleep .pet-wing-l,.home-pet.sleep .pet-wing-r,.home-pet.sleep .pet-tail{animation:none}
+.home-pet.sleep{translate:74% 8%;rotate:-6deg;animation:pet-sleep-breathe 2.4s ease-in-out infinite;--animation-reduced:none}
+.home-pet.sleep .pet-strip-wrap,.home-pet.napping .pet-strip-wrap{opacity:0}
+.home-pet.napping{animation:pet-sleep-breathe 2.4s ease-in-out infinite;--animation-reduced:none}
+.home-pet.napping:after{content:'☾ z Z';position:absolute;top:-14%;right:4%;color:#fde68a;font-size:16px;letter-spacing:4px;animation:pet-breathe 2s infinite;--animation-reduced:none}
+.home-pet.sleep .pet-eyes-open,.home-pet.napping .pet-eyes-open{animation:none;transform:scaleY(.12)}
+.home-pet.sleep .pet-head,.home-pet.sleep .pet-wing-l,.home-pet.sleep .pet-wing-r,.home-pet.sleep .pet-tail,.home-pet.napping .pet-head,.home-pet.napping .pet-wing-l,.home-pet.napping .pet-wing-r,.home-pet.napping .pet-tail{animation:none}
+@keyframes pet-sleep-breathe{0%,100%{scale:1 1}50%{scale:1.035 .965}}
 
 .toy-held .pet-foot-l{animation:pet-step-l .24s ease-in-out infinite;--animation-reduced:none}
 .toy-held .pet-foot-r{animation:pet-step-r .24s ease-in-out infinite;--animation-reduced:none}

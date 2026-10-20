@@ -56,7 +56,7 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
   const state = loadPets(storage, getCollection())
   const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '')
   let activity = null, remaining = 0, saveClock = 0, renderedKind = null, previewPet = null
-  let roamX = 0, roamY = 0, targetX = 35, targetY = 6, pauseTimer = 0.8, facing = 1, pettedTimer = 0, cuddleMode = 'petted', playTime = 0
+  let roamX = 0, roamY = 0, targetX = 35, targetY = 6, pauseTimer = 0.8, facing = 1, pettedTimer = 0, cuddleMode = 'petted', playTime = 0, napTimer = 0
   let bubbleTimer = 0, reactIdx = 0, strokeAccum = 0, lastStrokeX = null, lastStrokeY = null, lastStrokeAt = 0
   const active = () => previewPet || state.pets.find(p => p.id === state.active)
   const save = () => { try { storage.setItem('momo-pets.v1', JSON.stringify(state)) } catch { el('#pet-message').textContent = 'Trình duyệt chưa cho lưu. Tiến trình hiện vẫn giữ trong phiên này.' } }
@@ -106,6 +106,7 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
     const homePet = el('#home-pet')
     if (!homePet) return
     homePet.classList.toggle('walking', isWalking && !activity)
+    homePet.classList.toggle('napping', napTimer > 0 && !activity && !isWalking && pettedTimer <= 0)
     homePet.classList.toggle('petted', pettedTimer > 0 && !activity && cuddleMode === 'petted')
     homePet.classList.toggle('cuddle', pettedTimer > 0 && !activity && cuddleMode === 'cuddle')
     homePet.classList.toggle('tickle', pettedTimer > 0 && !activity && cuddleMode === 'tickle')
@@ -116,6 +117,7 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
   function interactWithPet(zone = 'head', clientX = null, clientY = null) {
     const pet = active()
     if (!pet || activity) return
+    napTimer = 0
     const pool = PET_REACTIONS[zone] || PET_REACTIONS.head
     const item = pool[reactIdx++ % pool.length]
     cuddleMode = zone === 'cheek' ? 'cuddle' : zone === 'belly' ? 'tickle' : 'petted'
@@ -246,6 +248,7 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
         targetX = clamp(relX * 260, -110, 110)
         targetY = clamp(relY * 90, -18, 16)
         pauseTimer = 0
+        napTimer = 0
         showPetBubble('Đợi mình chạy tới nè! 🐾', 1.5)
         message(`${pet.name} đang lon ton chạy tới chỗ bạn gọi! 🐾`)
       }
@@ -285,9 +288,11 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
     if (!pet || activity) return
     if (pet[setting.key] > 90) { message('Bạn nhỏ đã đủ rồi. Thử một hoạt động khác nhé!'); return }
     if (next === 'play' && pet.energy < 15) { message('Bạn nhỏ buồn ngủ rồi, cho bạn nghỉ một chút nhé.'); return }
-    activity = next; remaining = setting.duration; playTime = 0
+    activity = next; remaining = setting.duration; playTime = 0; napTimer = 0
     if (next === 'feed') { roamX = 0; roamY = 4; facing = 1 }
-    render(); message(setting.text)
+    render()
+    if (next === 'sleep') showPetBubble('Khò khò… mơ đẹp quá~ ☾', setting.duration)
+    message(setting.text)
   } })
   el('#pet-back').onclick = goArcade; el('#pet-find').onclick = goArcade
   render()
@@ -299,6 +304,10 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
       if (pettedTimer > 0) {
         pettedTimer = Math.max(0, pettedTimer - dt)
         if (pettedTimer <= 0) syncPetTransform(false)
+      }
+      if (napTimer > 0) {
+        napTimer = Math.max(0, napTimer - dt)
+        if (napTimer <= 0) syncPetTransform(false)
       }
       if (bubbleTimer > 0) {
         bubbleTimer = Math.max(0, bubbleTimer - dt)
@@ -318,10 +327,16 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
           syncPetTransform(true)
         }
         if (remaining <= 0) {
-          const setting = settings[activity]; pet[setting.key] = Math.min(100, pet[setting.key] + setting.amount)
-          if (activity === 'play') { pet.energy = Math.max(0, pet.energy - 12); pet.food = Math.max(0, pet.food - 8) }
-          if (activity === 'sleep') pet.food = Math.max(0, pet.food - 5)
+          const finishedActivity = activity
+          const setting = settings[finishedActivity]; pet[setting.key] = Math.min(100, pet[setting.key] + setting.amount)
+          if (finishedActivity === 'play') { pet.energy = Math.max(0, pet.energy - 12); pet.food = Math.max(0, pet.food - 8) }
+          if (finishedActivity === 'sleep') {
+            pet.food = Math.max(0, pet.food - 5)
+            napTimer = 3.6
+            pauseTimer = 3.8
+          }
           pet.care++; activity = null; save(); render(); onUpdateCollection?.()
+          if (finishedActivity === 'sleep') showPetBubble('Khò… zzz~ ☾', 2.6)
           message(pet.care === GROW_CARE_THRESHOLD ? `✨ Kỳ diệu quá! ${pet.name} đã lớn khôn thành hình dạng Trưởng Thành và mở khóa chậu cây mới!` : pet.care === 7 ? 'Dây sao đã làm căn phòng lung linh hơn!' : 'Bạn nhỏ vui lắm! Cảm ơn bạn đã chăm sóc.');
         }
       } else {
@@ -338,7 +353,13 @@ export function createPetHome({ storage, getCollection, goArcade, onUpdateCollec
           const dx = targetX - roamX, dy = targetY - roamY
           const dist = Math.hypot(dx, dy)
           if (dist < 2.5) {
-            pauseTimer = 0.55 + Math.random() * 0.85
+            if (pet.energy < 48 && Math.random() < 0.45) {
+              napTimer = 2.8
+              pauseTimer = 3.0
+              showPetBubble('Ngáp~ buồn ngủ quá… ☾', 2.2)
+            } else {
+              pauseTimer = 0.55 + Math.random() * 0.85
+            }
             syncPetTransform(false)
           } else {
             const speed = 46 * dt
